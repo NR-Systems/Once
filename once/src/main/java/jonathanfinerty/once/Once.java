@@ -3,6 +3,7 @@ package jonathanfinerty.once;
 import android.content.Context;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
+
 import androidx.annotation.IntDef;
 import androidx.annotation.Nullable;
 
@@ -61,7 +62,7 @@ public class Once {
      * @param scope The scope to not repeat the to do task in
      * @param tag   A string identifier unique to the operation.
      */
-    public static void toDo(@Scope int scope, String tag) {
+    public static synchronized void toDo(@Scope int scope, String tag) {
 
         List<Long> tagSeenList = tagLastSeenMap.get(tag);
 
@@ -82,7 +83,7 @@ public class Once {
      *
      * @param tag A string identifier unique to the operation.
      */
-    public static void toDo(String tag) {
+    public static synchronized void toDo(String tag) {
         toDoSet.put(tag);
     }
 
@@ -92,12 +93,12 @@ public class Once {
      * @param tag A string identifier unique to the operation.
      * @return {@code true} if the operation associated with {@code tag} has been marked 'to do' and has not been passed to {@code markDone()} since.
      */
-    public static boolean needToDo(String tag) {
+    public static synchronized boolean needToDo(String tag) {
         return toDoSet.contains(tag);
     }
 
     @Nullable
-    public static Date lastDone(String tag) {
+    public static synchronized Date lastDone(String tag) {
         List<Long> lastSeenTimeStamps = tagLastSeenMap.get(tag);
         if (lastSeenTimeStamps.isEmpty()) {
             return null;
@@ -116,7 +117,7 @@ public class Once {
      * @return {@code true} if the operation associated with {@code tag} has been marked done within
      * the given {@code scope}.
      */
-    public static boolean beenDone(String tag) {
+    public static synchronized boolean beenDone(String tag) {
         return beenDone(THIS_APP_INSTALL, tag, moreThan(0));
     }
 
@@ -127,7 +128,7 @@ public class Once {
      * @param numberOfTimes Requirement for how many times the operation must have be done.
      * @return {@code true} if the operation associated with {@code tag} has been marked done the specific {@code numberOfTimes}.
      */
-    public static boolean beenDone(String tag, CountChecker numberOfTimes) {
+    public static synchronized boolean beenDone(String tag, CountChecker numberOfTimes) {
         return beenDone(THIS_APP_INSTALL, tag, numberOfTimes);
     }
 
@@ -143,7 +144,7 @@ public class Once {
      * @return {@code true} if the operation associated with {@code tag} has been marked done within
      * the given {@code scope} at least once.
      */
-    public static boolean beenDone(@Scope int scope, String tag) {
+    public static synchronized boolean beenDone(@Scope int scope, String tag) {
         return beenDone(scope, tag, moreThan(0));
     }
 
@@ -157,7 +158,7 @@ public class Once {
      * @return {@code true} if the operation associated with {@code tag} has been marked done within
      * the given {@code scope} the specific {@code numberOfTimes}.
      */
-    public static boolean beenDone(@Scope int scope, String tag, CountChecker numberOfTimes) {
+    public static synchronized boolean beenDone(@Scope int scope, String tag, CountChecker numberOfTimes) {
 
         List<Long> tagSeenDates = tagLastSeenMap.get(tag);
 
@@ -200,7 +201,7 @@ public class Once {
      * @return {@code true} if the operation associated with {@code tag} has been marked done
      * within the last provide time span.
      */
-    public static boolean beenDone(TimeUnit timeUnit, long amount, String tag) {
+    public static synchronized boolean beenDone(TimeUnit timeUnit, long amount, String tag) {
         return beenDone(timeUnit, amount, tag, moreThan(0));
     }
 
@@ -214,7 +215,7 @@ public class Once {
      * @return {@code true} if the operation associated with {@code tag} has been marked done at least {@code numberOfTimes}
      * within the last provide time span.
      */
-    public static boolean beenDone(TimeUnit timeUnit, long amount, String tag, CountChecker numberOfTimes) {
+    public static synchronized boolean beenDone(TimeUnit timeUnit, long amount, String tag, CountChecker numberOfTimes) {
         long timeInMillis = timeUnit.toMillis(amount);
         return beenDone(timeInMillis, tag, numberOfTimes);
     }
@@ -228,7 +229,7 @@ public class Once {
      * @return {@code true} if the operation associated with {@code tag} has been marked done at least once
      * within the last X milliseconds.
      */
-    public static boolean beenDone(long timeSpanInMillis, String tag) {
+    public static synchronized boolean beenDone(long timeSpanInMillis, String tag) {
         return beenDone(timeSpanInMillis, tag, moreThan(0));
     }
 
@@ -243,7 +244,7 @@ public class Once {
      * @return {@code true} if the operation associated with {@code tag} has been marked done
      * within the last X milliseconds.
      */
-    public static boolean beenDone(long timeSpanInMillis, String tag, CountChecker numberOfTimes) {
+    public static synchronized boolean beenDone(long timeSpanInMillis, String tag, CountChecker numberOfTimes) {
         List<Long> tagSeenDates = tagLastSeenMap.get(tag);
 
         if (tagSeenDates.isEmpty()) {
@@ -267,7 +268,7 @@ public class Once {
      *
      * @param tag A string identifier unique to the operation.
      */
-    public static void markDone(String tag) {
+    public static synchronized void markDone(String tag) {
         tagLastSeenMap.put(tag, new Date().getTime());
         sessionList.add(tag);
         toDoSet.remove(tag);
@@ -279,7 +280,7 @@ public class Once {
      *
      * @param tag A string identifier unique to the operation.
      */
-    public static void clearDone(String tag) {
+    public static synchronized void clearDone(String tag) {
         tagLastSeenMap.remove(tag);
         sessionList.remove(tag);
     }
@@ -290,7 +291,7 @@ public class Once {
      *
      * @param tag A string identifier unique to the operation.
      */
-    public static void clearToDo(String tag) {
+    public static synchronized void clearToDo(String tag) {
         toDoSet.remove(tag);
     }
 
@@ -298,7 +299,7 @@ public class Once {
      * Clears all tags as done. All checks with {@code beenDone()} with any tag will return {@code false}
      * until they are marked done again.
      */
-    public static void clearAll() {
+    public static synchronized void clearAll() {
         tagLastSeenMap.clear();
         sessionList.clear();
     }
@@ -307,7 +308,7 @@ public class Once {
      * Clears all tags as 'to do'. All checks with {@code needToDo()} with any tag will return {@code false}
      * until they are marked 'to do' again.
      */
-    public static void clearAllToDos() {
+    public static synchronized void clearAllToDos() {
         toDoSet.clear();
     }
 
